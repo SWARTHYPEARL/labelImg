@@ -275,8 +275,10 @@ class MainWindow(QMainWindow, WindowMixin):
         delete = action(get_str('delBox'), self.delete_selected_shape,
                         'Delete', 'delete', get_str('delBoxDetail'), enabled=False)
         copy = action(get_str('dupBox'), self.copy_selected_shape,
-                      'Ctrl+D', 'copy', get_str('dupBoxDetail'),
-                      enabled=False)
+                      #'Ctrl+D', 'copy', get_str('dupBoxDetail'),
+                      'S', 'copy', get_str('dupBoxDetail'),
+                      #enabled=False)
+                      enabled=True)
 
         advanced_mode = action(get_str('advancedMode'), self.toggle_advanced_mode,
                                'Ctrl+Shift+A', 'expert', get_str('advancedModeDetail'),
@@ -887,6 +889,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
     def copy_selected_shape(self):
         self.add_label(self.canvas.copy_selected_shape())
+        self.save_file()
         # fix copy and delete
         self.shape_selection_changed(True)
 

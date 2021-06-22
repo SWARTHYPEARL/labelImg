@@ -451,7 +451,7 @@ class Canvas(QWidget):
             self.shapes.append(shape)
             shape.selected = True
             self.selected_shape = shape
-            self.bounded_shift_shape(shape)
+            #self.bounded_shift_shape(shape)
             return shape
 
     def bounded_shift_shape(self, shape):

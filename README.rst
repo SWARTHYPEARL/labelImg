@@ -3,5 +3,6 @@ labelImg with DICOM
 
 Original code: tzutalin/labelImg
 
-<Working>
- - import DICOM file
+<Modification>
+ - read DICOM file
+ - Hounsfield Unit windowing

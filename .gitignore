@@ -1,6 +1,7 @@
 resources/icons/.DS_Store
 
 resources.py
+predefined_classes.txt
 
 .idea*
 labelImg.egg-info*
@@ -10,7 +11,6 @@ labelImg.egg-info*
 
 build/
 dist/
-data/
 
 tags
 cscope*

@@ -1,7 +1,6 @@
 resources/icons/.DS_Store
 
 resources.py
-predefined_classes.txt
 
 .idea*
 labelImg.egg-info*

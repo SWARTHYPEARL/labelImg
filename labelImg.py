@@ -14,6 +14,8 @@ import webbrowser as wb
 from functools import partial
 from collections import defaultdict
 
+import qimage2ndarray
+
 try:
     from PyQt5.QtGui import *
     from PyQt5.QtCore import *
@@ -338,6 +340,14 @@ class MainWindow(QMainWindow, WindowMixin):
                                   icon='color', tip=get_str('shapeFillColorDetail'),
                                   enabled=False)
 
+        # dicom HU window
+        self.HU_level = 300
+        self.HU_width = 2500
+        self.dialog_HU = QDialog()
+        set_HU_window = action(get_str("setHU"), self.set_hounsfieldunit,
+                               None, None, get_str("setHounsfieldUnitWindow"),
+                               enabled=True)
+
         labels = self.dock.toggleViewAction()
         labels.setText(get_str('showHide'))
         labels.setShortcut('Ctrl+Shift+L')
@@ -374,7 +384,8 @@ class MainWindow(QMainWindow, WindowMixin):
                                                delete, shape_line_color, shape_fill_color),
                               onLoadActive=(
                                   close, create, create_mode, edit_mode),
-                              onShapesPresent=(save_as, hide_all, show_all))
+                              onShapesPresent=(save_as, hide_all, show_all),
+                              setHUwindow=set_HU_window) # dicom HU window
 
         self.menus = Struct(
             file=self.menu(get_str('menu_file')),
@@ -411,7 +422,8 @@ class MainWindow(QMainWindow, WindowMixin):
             labels, advanced_mode, None,
             hide_all, show_all, None,
             zoom_in, zoom_out, zoom_org, None,
-            fit_window, fit_width))
+            fit_window, fit_width, None,
+            set_HU_window)) # dicom HU window
 
         self.menus.file.aboutToShow.connect(self.update_file_menu)
 
@@ -1086,12 +1098,17 @@ class MainWindow(QMainWindow, WindowMixin):
             else:
                 # Load image:
                 # read data first and store for saving into label file.
-                self.image_data = read(unicode_file_path, None)
+                if ".dcm" == os.path.splitext(unicode_file_path)[-1]: # dicom file
+                    self.image_data = read_dicom(unicode_file_path, self.HU_width, self.HU_level)
+                else:
+                    self.image_data = read(unicode_file_path, None)
                 self.label_file = None
                 self.canvas.verified = False
 
             if isinstance(self.image_data, QImage):
                 image = self.image_data
+            elif isinstance(self.image_data, np.ndarray):
+                image = qimage2ndarray.array2qimage(self.image_data, normalize=False)
             else:
                 image = QImage.fromData(self.image_data)
             if image.isNull():
@@ -1231,6 +1248,10 @@ class MainWindow(QMainWindow, WindowMixin):
     def scan_all_images(self, folder_path):
         extensions = ['.%s' % fmt.data().decode("ascii").lower() for fmt in QImageReader.supportedImageFormats()]
         images = []
+
+        # add dicom extensions
+        dicom_extensions = [".dcm"]
+        extensions.extend(dicom_extensions)
 
         for root, dirs, files in os.walk(folder_path):
             for file in files:
@@ -1589,6 +1610,45 @@ class MainWindow(QMainWindow, WindowMixin):
 
     def toggle_draw_square(self):
         self.canvas.set_drawing_shape_to_square(self.draw_squares_option.isChecked())
+
+    def btn_on_click(self):
+        print("temp")
+
+    # dicom HU window
+    def set_hounsfieldunit(self):
+
+        line_HU_level = QLineEdit()
+        line_HU_width = QLineEdit()
+        line_HU_level.setValidator(QIntValidator())
+        line_HU_width.setValidator(QIntValidator())
+        line_HU_level.setText(str(self.HU_level))
+        line_HU_width.setText(str(self.HU_width))
+
+        btn_OK = QPushButton("OK")
+        def btn_OK_clicked():
+            self.HU_level = int(line_HU_level.text())
+            self.HU_width = int(line_HU_width.text())
+            self.dialog_HU.close()
+            if self.file_path is not None:
+                self.load_file(self.file_path)
+        btn_OK.clicked.connect(btn_OK_clicked)
+
+        layout = QFormLayout()
+        layout.addRow("HU_level:", line_HU_level)
+        layout.addRow("HU_width:", line_HU_width)
+        layout.addRow(btn_OK)
+
+        #btn_OK = QPushButton("OK", self.dialog_HU)
+        #btn_OK.move(100, 100)
+        #btn_OK.clicked.connect(self.dialog_HU.close)
+
+        self.dialog_HU.setLayout(layout)
+        self.dialog_HU.setWindowTitle("Hounsfield Unit Window")
+        self.dialog_HU.setWindowModality(Qt.ApplicationModal)
+        #self.dialog_HU.resize(300, 200)
+        self.dialog_HU.show()
+
+
 
 def inverted(color):
     return QColor(*[255 - v for v in color.getRgb()])

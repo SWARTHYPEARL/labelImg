@@ -4,6 +4,9 @@ import hashlib
 import re
 import sys
 
+import numpy as np
+import pydicom
+
 try:
     from PyQt5.QtGui import *
     from PyQt5.QtCore import *
@@ -101,3 +104,36 @@ def natural_sort(list, key=lambda s:s):
         return lambda s: [convert(c) for c in re.split('([0-9]+)', key(s))]
     sort_key = get_alphanum_key_func(key)
     list.sort(key=sort_key)
+
+def transform_to_hu(medical_image, image):
+    hu_image = image * medical_image.RescaleSlope + medical_image.RescaleIntercept
+    hu_image[hu_image < -1024] = -1024
+    return hu_image
+
+def window_image(image, window_center, window_width):
+    window_image = image.copy()
+    image_min = window_center - (window_width / 2)
+    image_max = window_center + (window_width / 2)
+    window_image[window_image < image_min] = image_min
+    window_image[window_image > image_max] = image_max
+    return window_image
+
+def resize_grayscale(image):
+    image = np.array(image, dtype=np.float64)
+    image -= np.min(image)
+    image *= 255 / np.max(image)
+    return image
+
+def read_dicom(path, window_width, window_level):
+    image_medical = pydicom.dcmread(path)
+    image_data = image_medical.pixel_array
+
+    image_hu = transform_to_hu(image_medical, image_data)
+    image_window = window_image(image_hu.copy(), window_level, window_width)
+    image_window_pixel = resize_grayscale(image_window)
+
+    image_window_pixel = np.expand_dims(image_window_pixel, axis=2)   # (512, 512, 1)
+    #image_ths = np.concatenate([image_window_norm, image_window_norm, image_window_norm], axis=2)   # (512, 512, 3)
+
+    #return image_ths # use 3-channel
+    return image_window_pixel # use single-channel # use single-channel with norm

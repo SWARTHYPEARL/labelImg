@@ -1,3 +1,4 @@
+cervical_7
 thoracic_1
 thoracic_2
 thoracic_3
@@ -10,3 +11,5 @@ thoracic_9
 thoracic_10
 thoracic_11
 thoracic_12
+lumber_1
+lumber_2
